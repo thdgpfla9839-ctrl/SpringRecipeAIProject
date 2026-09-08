@@ -44,12 +44,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
  *                                           없는 재료는 재료X 형식으로 출력될 것
  *                     
  */
-@Controller
-public class RecipeRestController {
-
-	@GetMapping("/recipe/recommand")
-	public String recipe_recommand()
-	{
-		return "recipe/recommand";
-	}
-}
+/*
+ * @Controller public class RecipeRestController {
+ * 
+ * @GetMapping("/recipe/recommand") public String recipe_recommand() { return
+ * "recipe/recommand"; } }
+ */
