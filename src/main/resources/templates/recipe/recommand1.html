@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/vue-demi"></script>
+<script src="https://unpkg.com/pinia@2.1.7/dist/pinia.iife.prod.js"></script>
+</head>
+<body>
+ <div id="app">
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <header class="header">
+
+        <!-- 로고 영역 -->
+        <div class="logo-area">
+
+            <!-- 요리사 아이콘 -->
+            <div class="logo-icon">
+                👨🍳
+            </div>
+
+            <!-- 서비스 이름 -->
+            <div class="logo">
+                AI Recipe
+            </div>
+
+            <!-- 서비스 설명 -->
+            <div class="logo-sub">
+                냉장고 속 재료로 오늘 뭐 먹지?
+            </div>
+
+        </div>
+
+
+        <!-- 메뉴 -->
+        <div class="header-menu">
+
+            <span>
+                🧊 나의 냉장고
+            </span>
+
+            <span>
+                🕘 최근 추천
+            </span>
+
+            <span>
+                ⚙️ 설정
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
+    <main class="container">
+
+
+        <!-- =================================================
+             LEFT
+             ================================================= -->
+
+        <section class="card">
+
+
+            <!-- 제목 -->
+            <div class="title">
+
+                <span>
+                    1. 냉장고 재료를 선택하세요
+                </span>
+
+                  <span class="count">
+                 </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 검색
+                 ================================================= -->
+
+            <div class="search">
+
+                
+                <input
+                    type="text"
+                                        placeholder="재료를 검색하세요 (예: 김치, 돼지고기)">
+
+                <span class="search-icon">
+                    🔍
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 카테고리
+                 ================================================= -->
+
+            <div class="categories">
+
+                <!-- 전체 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    전체
+                </button>
+
+                <!-- 육류 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    육류
+                </button>
+
+                <!-- 채소 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    채소
+                </button>
+
+                <!-- 계란/유제품 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    계란/유제품
+                </button>
+
+                <!-- 곡류 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    곡류
+                </button>
+
+                <!-- 양념 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    양념
+                </button>
+
+                <!-- 수산물 -->
+                <button
+                    type="button"
+                    class="category"
+                    >
+                    수산물
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 선택한 재료
+                 ================================================= -->
+
+            <div class="selected-box">
+
+                <div class="selected-header">
+
+                    <span>
+                        선택한 재료
+                    </span>
+
+                    <!-- 전체 삭제 -->
+                    <button
+                        type="button"
+                        class="delete-btn"
+                        >
+
+                        🗑 전체 삭제
+
+                    </button>
+
+                </div>
+
+
+                <!-- 선택 재료 -->
+                <div class="selected-list">
+
+                    <!-- 선택한 재료가 없으면 표시 -->
+                    <span
+                        
+                        style="color:#999;font-size:13px;">
+
+                        재료를 선택해주세요.
+
+                    </span>
+
+
+                    <!-- 선택된 재료 출력 -->
+                    <span
+                         class="selected-item"
+                         v-for="name in selectedIngredients"
+                         :key="name"
+                    >
+                    {{name}} ❌
+
+                      
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 재료 목록
+                 ================================================= -->
+
+            <div class="ingredient-grid">
+
+
+                <!-- 돼지고기 -->
+                <div
+                   
+                    class="ingredient"
+                    >
+
+                    <!-- 아이콘 -->
+                    <div class="ingredient-icon">
+                                           </div>
+
+                    <!-- 이름 -->
+                    <div class="ingredient-name">
+                                            </div>
+
+                    <!-- 선택 표시 -->
+                    <div
+                     class="check">
+
+                        ✓
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 추천 버튼
+                 ================================================= -->
+
+            <button
+                type="button"
+                class="recommend-btn"
+               >
+
+                <!-- 로딩 중 -->
+                <span v-if="loading">
+                    🤖 AI가 레시피를 검색하고 있습니다...
+                </span>
+
+                <!-- 일반 -->
+                <span v-else>
+                    🤖 AI 레시피 추천받기
+                </span>
+
+            </button>
+
+
+        </section>
+
+
+        <!-- =====================================================
+             RIGHT
+             ===================================================== -->
+
+        <section class="card">
+
+
+            <!-- 결과 제목 -->
+            <div class="result-title">
+                2. AI 레시피 추천 결과 ✨
+            </div>
+
+
+            <!-- =================================================
+                 로딩
+                 ================================================= -->
+
+            <div
+                v-if="loading"
+                class="loading">
+
+                <div style="font-size:40px;">
+                    🤖
+                </div>
+
+                <div>
+                    PostgreSQL pgVector에서
+                    유사 레시피를 검색하고 있습니다...
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 검색 결과
+                 ================================================= -->
+
+            <div v-else>
+
+
+                <!-- 에러 메시지 -->
+                <div
+                    
+                    class="empty">
+
+                    ❌
+
+                    <br>
+                    <br>
+
+                   
+                </div>
+
+
+                <!-- 결과 없음 -->
+                <div
+                    
+                    class="empty">
+
+                    👨🍳
+
+                    <br>
+                    <br>
+
+                    냉장고 재료를 선택하고
+
+                    <br>
+
+                    <strong>
+                        AI 레시피 추천받기
+                    </strong>
+
+                    버튼을 눌러주세요.
+
+                </div>
+
+
+                <!-- =================================================
+                     레시피 목록
+                     ================================================= -->
+
+                <div
+                                       class="recipe-result">
+
+
+                    <!-- 레시피 헤더 -->
+                    <div class="recipe-header">
+
+
+                        <!-- 레시피 정보 -->
+                        <div>
+
+                            <!-- 레시피 이름 -->
+                            <div class="recipe-name">
+
+                                <span class="recipe-icon">
+                                    🍲
+                                </span>
+
+                               
+                            </div>
+
+
+                            <!-- 점수 -->
+                            <div class="scores">
+
+
+                                <!-- PGVector 유사도 -->
+                                <div class="score orange">
+
+                                    PGVector 유사도
+
+                                    <strong>
+                                       %
+                                    </strong>
+
+                                </div>
+
+
+                                <!-- 재료 충족률 -->
+                                <div class="score green">
+
+                                    재료 충족률
+
+                                    <strong>
+                                        %
+                                    </strong>
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- 이미지 -->
+                        <img
+                            class="recipe-image"
+                           
+                            >
+
+                    </div>
+
+
+                    <!-- =================================================
+                         재료 상태
+                         ================================================= -->
+
+                    <div class="status">
+
+
+                        <!-- 가지고 있는 재료 -->
+                        <div class="status-box have">
+
+                            <div class="status-title">
+                                ✅ 가지고 있는 재료
+                            </div>
+
+                            <div class="tags">
+
+                                <span
+                                   
+                                    class="tag">
+
+                                    없음
+
+                                </span>
+
+                                <span
+                                                                       class="tag">
+
+                                    ✅ {{ item }}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- 부족한 재료 -->
+                        <div class="status-box missing">
+
+                            <div class="status-title">
+                                ❌ 부족한 재료
+                            </div>
+
+                            <div class="tags">
+
+                                <span
+                                                                        class="tag">
+
+                                    🎉 모든 재료 보유
+
+                                </span>
+
+                                <span
+                                                                       class="tag">
+
+                                    ❌ {{ item }}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         최종 레시피
+                         ================================================= -->
+
+                    <div class="final-recipe">
+
+
+                        <!-- 제목 -->
+                        <div class="final-title">
+                            👨🍳 최종 레시피
+                        </div>
+
+
+                        <div class="recipe-content">
+
+
+                            <!-- =================================================
+                                 재료
+                                 ================================================= -->
+
+                            <div class="ingredients">
+
+                                <h3>
+                                    🛒 재료
+                                </h3>
+
+
+                                <ul>
+
+
+                                    <!-- 가지고 있는 재료 -->
+                                    <li
+                                      >
+
+                                       
+                                    </li>
+
+
+                                    <!-- 부족한 재료 -->
+                                    <li
+                                        >
+
+                                   
+                                        <strong style="color:red;">
+                                            (부족)
+                                        </strong>
+
+                                    </li>
+
+
+                                </ul>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 조리 방법
+                                 ================================================= -->
+
+                            <div class="steps">
+
+                                <h3>
+                                    👩🍳 조리 방법
+                                </h3>
+
+
+                                <!-- 조리 과정 -->
+                                <div
+                                    
+                                    class="step">
+
+                                    <span class="step-number">
+                                                                           </span>
+
+                                    <span>
+                                                                           </span>
+
+                                </div>
+
+
+                                <!-- 조리 방법 없음 -->
+                                <div
+                                                                       class="step">
+
+                                    <span class="step-number">
+                                        1
+                                    </span>
+
+                                    <span>
+                                        레시피 상세 화면에서
+                                        조리 방법을 확인해주세요.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             AI TIP
+                             ================================================= -->
+
+                        <div class="tip">
+
+                            <div class="tip-title">
+                                💡 AI 추천 TIP
+                            </div>
+
+                            현재 냉장고 재료와
+                            가장 유사한 레시피를
+                            PostgreSQL pgVector를 이용해
+                            검색했습니다.
+
+                            <span
+                               >
+
+                                부족한 재료를 준비하면
+                                더욱 정확하게 조리할 수 있습니다.
+
+                            </span>
+
+                            <span v-else>
+
+                                현재 보유한 재료만으로
+                                조리할 수 있는 레시피입니다.
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+ <script src="/vue/recommandStore.js"></script>
+ <script>
+  const {createApp,computed,ref}=Vue
+  const {createPinia}=Pinia
+  const app=createApp({
+	  setup(){
+		  const recipeStore=useRecipeStore()
+		  return {
+			  selectedIngredients:recipeStore.selectedIngredients,
+			  selectedCategory:recipeStore.selectedCategory,
+			  loading:recipeStore.loading,
+			  
+		  }
+	  }
+  })
+ </script>
+</body>
+</html>

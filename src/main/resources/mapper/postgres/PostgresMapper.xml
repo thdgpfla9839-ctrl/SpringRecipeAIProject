@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sist.web.mapper.postgres.PostgresMapper">
+<!-- ============================================================ 
+  PostgreSQL Recipe Vector Mapper 
+  ============================================================ 
+  테이블 구조 recipe_vector 
+   id recipe_id content embedding
+    embedding 컬럼은 PostgreSQL pgVector 타입이어야 한다. 
+    예: embedding vector(768) 또는 embedding vector(1536) 등 실제 저장된 
+    Embedding 차원과 동일해야 한다. 
+  =========
+  ========================================================
+  pgVector 유사도 검색 
+  ======================================================== 
+  <=> 는 cosine distance이다. distance가 작을수록 유사하다. 
+  따라서 ORDER BY embedding <=> 검색벡터 를 사용한다. 
+  similarity는 1 - distance 로 계산한다. 
+  예: distance = 0.077 similarity = 1 - 0.077 = 0.923 = 92.3% 
+  --> 
+  <select id="findSimilarRecipes" resultType="hashmap"> 
+  SELECT id, recipe_id, content, 
+   (embedding &lt;=> CAST(#{embedding} AS vector)) AS distance, 
+   ( 1 - (embedding &lt;=> CAST(#{embedding} AS vector)) ) AS similarity 
+  FROM recipe_vector  ORDER BY embedding 
+  &lt;=> CAST(#{embedding} AS vector) 
+  LIMIT #{limit} 
+  </select>
+</mapper>
