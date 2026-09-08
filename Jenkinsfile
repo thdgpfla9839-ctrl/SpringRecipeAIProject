@@ -13,11 +13,11 @@ pipeline {
         // docker push
         // docker pull
         // docker run
-        
-        // deploy.yml에서 
+
+        // deploy.yml에서
         // -name: => stage 부분
         //   run: => steps 부분
-        
+
         // 1. Repository 속 소스 파일을 체크하는 중 => 깃의 url 주소가 필요함
         stage('Check Out') {
             steps {
@@ -25,8 +25,8 @@ pipeline {
                 checkout scm
             }
         }
-        
-        // 임시로 뭐 만든대 
+
+        // 임시로 뭐 만든대
         stage('Create .env'){
             steps {
                 withCredentials([
@@ -40,17 +40,15 @@ pipeline {
                     )
                 ]){
                     sh '''
-                        cat > .env << EOF
-                        SPRING_PROFILES_ACTIVE=prod
-                        POST_URL=${POST_URL}
-                        GEN_KEY=${GEN_KEY}
-                        
-                          chmod 600 .env
-                       '''
+echo "SPRING_PROFILES_ACTIVE=prod" > .env
+echo "POST_URL=${POST_URL}" >> .env
+echo "GEN_KEY=${GEN_KEY}" >> .env
+chmod 600 .env
+'''
                 }
             }
         }
-        
+
         // 2. gradlew build 하기 전에 permission 처리 해준다
         stage('Gradlew Permission'){
             steps {
@@ -84,13 +82,13 @@ pipeline {
                        passwordVariable:'DH_PASS'
                    )]){
                       sh '''
-                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin   
+                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
                          '''
                    }
-                   
+
             }
         }
-        
+
         stage('Docker Push'){
             steps {
                 sh '''
@@ -105,7 +103,7 @@ pipeline {
                    '''
             }
         }
-        
+
         stage('Container Remove'){
             steps {
                 sh '''
@@ -113,7 +111,7 @@ pipeline {
                    '''
             }
         }
-        
+
         stage('DockerHub Pull'){
             steps {
                 sh '''
@@ -121,7 +119,7 @@ pipeline {
                    '''
             }
         }
-        
+
         stage('Docker Run'){
             steps {
                 sh '''
