@@ -17,7 +17,7 @@ spring:
     suffix: .html
     mode: HTML
 
-  ai:
+  ai: 
     google:
       genai:
         api-key: ${GEN_KEY}
