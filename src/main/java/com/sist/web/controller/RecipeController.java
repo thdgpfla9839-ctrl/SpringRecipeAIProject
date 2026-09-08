@@ -52,6 +52,55 @@ import lombok.RequiredArgsConstructor;
  * HTML 결과 출력
  * ============================================================
  */
+
+
+/*
+ *  [전체 동작 과정]
+ *   <브라우저> : HTML / JavaScript(순수 자바스크립트인 바닐라js)
+ *    |
+ *    재료 선택
+ *    |
+ *    타임리프에서 전송(post  /recipe/recommand)
+ *    |
+ *    RecipeController가 값을 받음
+ *    => 1) @Getmapping("/recipe/recommand") => 화면 ui 전송
+ *       2) @postmapping("/recipe/recommand") => 데이터 전송 시 
+ *       같은 경로가 들어가면 안 되지만 get방식과 post방식으로 할 땐 상관없다
+ *       추가로 @ResponseBody => 문자열이나 JSON 전송핳 때 사용 => RestController로 변경
+ *   |
+ *   ingredients 전달(재료)
+ *   |
+ *   RecipeService가 받음
+ *   => 1) 재료가 있는지 확인
+ *      2) 검색하는 문장 생성
+ *      3) EmbeddingModel 생성
+ *      4) String으로 저장된 것들을  => float[]로 변경 : vector
+ *      5) PostgreSQL + pgVector안에서 유사 검색 => 원래는 Like 문장으로 검색해봤지
+ *      6) 레시피에서 content를 추출
+ *      7) 냉장고에서 보내준 데이터와 레시피 재료를 비교
+ *      8) 재료상태가 어떤 상태인지=> RecipeService를 보면 재료 가지고 있는지 여부
+ *      9) 8을 갖고 재료 충족률을 계산
+ *   |
+ *   추천 레시피 List => Limit 5
+ *   => 1) 보유하고 있는 재료
+ *      2) 부족한 재료
+ *      3) 재료가 몇프로 충족되는지 충족률
+ *      4) 레시피명
+ *      5) 조리방법
+ *      6) 요리종류
+ *      7) 조리 과정
+ *  --------------------------------------------------------------------------
+ *  |
+ *  타임리프 화면
+ *  => HTML - Controller - RecipeService - (EmbeddingModel - PostgreSQL + pgVector - 유사 레시피 찾기 - 재료 확인) 이 부분이 스프링AI로 처리한 부분
+ *  |
+ *  이제 HTML에서 출력   
+ */ 
+
+// 지금 자바스크립트로 돼 있는데 이 부분을 pinia로 수정해야하고
+//  @ResponseBody를 @restController로
+//  @Tool => Tool Calling => 프롬프트 검색
+//  기능별 분리 => MCP
 @Controller
 @RequestMapping("/recipe")
 @RequiredArgsConstructor
@@ -73,7 +122,7 @@ public class RecipeController {
      *
      * http://localhost:8080/recipe/recommend
      */
-    @GetMapping("/recommend")
+    @GetMapping("/recommand")
     public String recommendPage(Model model) {
 
         /*
@@ -84,7 +133,7 @@ public class RecipeController {
                 Collections.emptyList()
         );
 
-        return "recipe/recommend";
+        return "recipe/recommand";
     }
 
 
