@@ -78,7 +78,6 @@ pipeline {
         // 5. docker hub 로그인
         stage('DockerHub Login'){
             steps {
-                sh 
                    withCredentials([usernamePassword(
                        credentialsId:'dockerhub_info',
                        usernameVariable:'DH_USER',
