@@ -34,7 +34,7 @@ spring:
       embedding:
         text: google-genai
 
-# MyBatis 설정
+        # MyBatis 설정
 mybatis:
   type-aliases-package: com.sist.web.vo
   mapper-locations: 
