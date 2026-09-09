@@ -21,11 +21,11 @@ spring:
     google:
       genai:
         api-key: ${GEN_KEY}
-        project-id: gen-lang-client-0877229960
+        project-id: youtube-api-test-505201
         location: us-central1
         embedding:
           api-key: ${GEN_KEY}
-          project-id: gen-lang-client-0877229960
+          project-id: youtube-api-test-505201
           text: 
             options:
               model: gemini-embedding-001

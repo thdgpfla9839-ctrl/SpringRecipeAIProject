@@ -1,0 +1,11 @@
+
+services:
+  app:
+    build: .
+    image: thdgpfla5659/ai-app:latest
+    container_name: ai-app
+    env_file:
+      - .env
+    ports:
+      - "9090:9090"
+    restart: always
