@@ -42,7 +42,7 @@ pipeline {
             }
         }
         // 3. yml 인식 => ${POST_URL}, api-key : ${GEN_KEY} 이거 인식시키려고
-       stage('Create .env'){
+        stage('Create .env'){
             steps {
                 withCredentials([
                     string(
@@ -83,7 +83,7 @@ pipeline {
         }
         // 6. Docker Image => 얘가 넘어갈 때마다 시간 측정이 됨
         // 도커 이미지 만드는 과정까지가 CI
-         stage('Docker Build'){
+        stage('Docker Build'){
             steps {
                 sh '''
                    docker build -t ${DOCKER_IMAGE} . 
@@ -93,23 +93,21 @@ pipeline {
         // 7. 도커허브에 전송 => 도커 로그인 먼저 해야함
         stage('DockerHub Login'){
             steps {
-                   withCredentials([
-                      usernamePassword(
-                           credentialsId:'dockerhub_info',
-                           usernameVariable:'DH_USER',
-                           passwordVariable:'DH_PASS'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId:'dockerhub_info',
+                        usernameVariable:'DH_USER',
+                        passwordVariable:'DH_PASS'
                     )
-                  ]){
-                      sh '''
-                         echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
-                         '''
-                   }
-
+                ]){
+                    sh '''
+                       echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+                       '''
+                }
             }
         }
-    }
-    // 8. 도커 허브에 push
-    stage('DockerHub Push'){
+        // 8. 도커 허브에 push
+        stage('DockerHub Push'){
             steps {
                 sh '''
                    docker push ${DOCKER_IMAGE}
@@ -128,47 +126,45 @@ pipeline {
         
         // 10. 최신 이미지 읽어오기
         stage("DOCKER Compose Pull") {
-           steps {
+            steps {
                 sh '''
                     docker compose pull 
                    '''
-               
-                 }
+            }
         }
         
         // 11. docker compose 실행
         stage("DOCKER Compose Up") {
-           steps {
+            steps {
                 sh '''
                     docker compose up -d 
                    '''
-               
-                 }
             }
-           // 12. 컨테이너 체크 
+        }
+        
+        // 12. 컨테이너 체크 
         stage("Container Check") {
-           steps {
+            steps {
                 sh '''
                     docker compose ps 
                    '''
-               
-                 }
             }
-     }
+        }
+    } // stages 종료
+
+    post {
+        success{
+            echo '==============================================='
+            echo 'Docker Compose 배포 성공'
+            echo '==============================================='
+        }
+        failure {
+            echo '==============================================='
+            echo 'Docker Compose 배포 실패'
+            echo '==============================================='
+            sh '''
+                docker compose ps || true
+               '''
+        }
+    }
 } // pipeline 종료
-post {
-    success{
-        echo '==============================================='
-        echo 'Docker Compose 배포 성공'
-        echo '==============================================='
-    }
-    failure {
-        echo '==============================================='
-        echo 'Docker Compose 배포 실패'
-        echo '==============================================='
-        sh '''
-            docker compose ps || true
-           '''
-    }
-    
-}
