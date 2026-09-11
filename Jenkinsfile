@@ -156,7 +156,7 @@ pipeline {
                     )
                 ]){
                     sh '''
-                       ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248<<EOF
+                       ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248<<EOF
                        mkdir -p /home/ubuntu/app
                        
                        cd /home/ubuntu/app
@@ -184,9 +184,9 @@ pipeline {
                     )
                 ]){
                     sh '''
-                       ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248 "mkdir -p /home/ubuntu/app"
+                       ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248 "mkdir -p /home/ubuntu/app"
                        
-                       scp -i "SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248 docker-compose.yml ubuntu@43.200.129.248:/home/ubuntu/app/docker-compose.yml
+                       scp -i "SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248 docker-compose.yml ubuntu@43.200.129.248:/home/ubuntu/app/docker-compose.yml
                        '''
                 }
             }
