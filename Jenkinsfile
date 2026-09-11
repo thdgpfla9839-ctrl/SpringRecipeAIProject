@@ -41,9 +41,7 @@ pipeline {
         // 1. git checkout => 리포짓토리명 확인
         stage("Repository Checkout"){
             steps {
-                // 2. 실행파일이 들어가는 위치
                 echo 'Git Checkout'
-                // scm 안에는 git-url, jenkinsfile 인식등이 저장돼 있음
                 checkout scm
             }
         }
@@ -55,8 +53,6 @@ pipeline {
                    '''
             }
         }
-        // 4. yml 인식 => ${POST_URL}, api-key : ${GEN_KEY} 이거 인식시키려고
-        
         // 5. gradlew 실행권한
         stage('Gradlew Permission'){
             steps {
@@ -74,8 +70,7 @@ pipeline {
                    '''
             }
         }
-        // 7. Docker Image => 얘가 넘어갈 때마다 시간 측정이 됨
-        // 도커 이미지 만드는 과정까지가 CI
+        // 7. Docker Image
         stage('Docker Build'){
             steps {
                 sh '''
@@ -83,7 +78,7 @@ pipeline {
                    '''
             }
         }
-        // 8. 도커허브에 전송 => 도커 로그인 먼저 해야함
+        // 8. 도커허브에 전송
         stage('DockerHub Login'){
             steps {
                 withCredentials([
@@ -107,7 +102,7 @@ pipeline {
                    '''
             }
         }
-        // 10. ssh key 설정 => SERVER_SSH_KEY
+        // 10. ssh key 설정
         stage("SSH Key Setting"){
             steps {
                 withCredentials([
@@ -137,7 +132,7 @@ pipeline {
                    '''
             }
         }
-        // 12. .env 생성
+        // 12. .env 생성 (EOF 제거 → && 연결 방식으로 변경)
         stage('Create .env'){
             steps {
                 withCredentials([
@@ -155,21 +150,16 @@ pipeline {
                        usernameVariable: 'SSH_USER'
                     )
                 ]){
-                    sh '''
-                       ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248<<EOF
-                       mkdir -p /home/ubuntu/app
-                       
-                       cd /home/ubuntu/app
-                       
-                       rm -f .env 
-                       echo "SPRING_PROFILES_ACTIVE=prod" > .env
-                       echo "POST_URL=${POST_URL}" >> .env
-                       echo "GEN_KEY=${GEN_KEY}" >> .env
-                        
-                       chmod 600 .env
-                       
-                       EOF
-                       '''
+                    sh """
+                       ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@43.200.129.248 \
+                         "mkdir -p /home/ubuntu/app && \
+                          cd /home/ubuntu/app && \
+                          rm -f .env && \
+                          echo 'SPRING_PROFILES_ACTIVE=prod' > .env && \
+                          echo 'POST_URL=${POST_URL}' >> .env && \
+                          echo 'GEN_KEY=${GEN_KEY}' >> .env && \
+                          chmod 600 .env"
+                       """
                 }
             }
         }
@@ -191,6 +181,7 @@ pipeline {
                 }
             }
         }
+        // 14. Deploy (EOF 제거 → && 연결 방식으로 변경)
         stage("Deploy"){
             steps {
                  withCredentials([
@@ -200,16 +191,13 @@ pipeline {
                        usernameVariable: 'SSH_USER'
                     )
                 ]){
-                    sh '''
-                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248<<EOF
-                        cd /home/ubuntu/app
-                        docker-compose down
-                        docker-compose pull
-                        docker-compose up -d
-                        
-                        EOF
-                        
-                       '''
+                    sh """
+                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ubuntu@43.200.129.248 \
+                          "cd /home/ubuntu/app && \
+                           docker-compose down && \
+                           docker-compose pull && \
+                           docker-compose up -d"
+                       """
                 }
             }
         }
