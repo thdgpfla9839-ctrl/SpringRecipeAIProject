@@ -201,7 +201,7 @@ pipeline {
                     )
                 ]){
                     sh '''
-                        ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248<<EOF
+                        ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@43.200.129.248<<EOF
                         cd /home/ubuntu/app
                         docker-compose down
                         docker-compose pull
