@@ -29,6 +29,12 @@ pipeline {
         APP_DIR = "~/app"
         JAR_NAME = "SpringRecipeAIProject-0.0.1-SNAPSHOT.jar"
         DOCKER_IMAGE = "thdgpfla5659/ai-app:latest"
+        
+        // AWS EC2와 관련
+        SERVER_USER="ubuntu"
+        // 우분투 아이피
+        SERVER_IP="43.200.129.248"
+        APP_DIR="/home/ubuntu/app"
     }
     // 우분투나 aws에서 명령어 수행
     stages {
@@ -41,30 +47,18 @@ pipeline {
                 checkout scm
             }
         }
-        // 3. yml 인식 => ${POST_URL}, api-key : ${GEN_KEY} 이거 인식시키려고
-        stage('Create .env'){
+        //3. Java JDK 확인
+        stage("JDK21 확인"){
             steps {
-                withCredentials([
-                    string(
-                        credentialsId: 'post-url',
-                        variable: 'POST_URL'
-                    ),
-                    string(
-                        credentialsId: 'gen-key',
-                        variable: 'GEN_KEY'
-                    )
-                ]){
-                    sh '''
-                       echo "SPRING_PROFILES_ACTIVE=prod" > .env
-                       echo "POST_URL=${POST_URL}" >> .env
-                       echo "GEN_KEY=${GEN_KEY}" >> .env
-                        
-                       chmod 600 .env
-                       '''
-                }
+                sh '''
+                    java -version
+                    ./gradlew --version
+                   '''
             }
         }
-        // 4. gradlew 실행권한
+        // 4. yml 인식 => ${POST_URL}, api-key : ${GEN_KEY} 이거 인식시키려고
+        
+        // 5. gradlew 실행권한
         stage('Gradlew Permission'){
             steps {
                 sh '''
@@ -73,7 +67,7 @@ pipeline {
             }
         }
         
-        // 5. gradlew build 시작 => 배포파일 만들기
+        // 6. gradlew build 시작 => 배포파일 만들기
         stage('Gradlew Build'){
             steps {
                 sh '''
@@ -81,7 +75,7 @@ pipeline {
                    '''
             }
         }
-        // 6. Docker Image => 얘가 넘어갈 때마다 시간 측정이 됨
+        // 7. Docker Image => 얘가 넘어갈 때마다 시간 측정이 됨
         // 도커 이미지 만드는 과정까지가 CI
         stage('Docker Build'){
             steps {
@@ -90,7 +84,7 @@ pipeline {
                    '''
             }
         }
-        // 7. 도커허브에 전송 => 도커 로그인 먼저 해야함
+        // 8. 도커허브에 전송 => 도커 로그인 먼저 해야함
         stage('DockerHub Login'){
             steps {
                 withCredentials([
@@ -106,7 +100,7 @@ pipeline {
                 }
             }
         }
-        // 8. 도커 허브에 push
+        // 9. 도커 허브에 push
         stage('DockerHub Push'){
             steps {
                 sh '''
@@ -114,57 +108,111 @@ pipeline {
                    '''
             }
         }
-        
-        // 9. 기존의 컨테이너(ai-app) 종료
-        stage('DOCKER Compose DOWN'){
+        // 10. ssh key 설정 => SERVER_SSH_KEY
+        stage("SSH Key Setting"){
             steps {
-                sh '''
-                    docker compose down || true
-                   '''
+                withCredentials([
+                    sshUserPrivateKey(
+                       credentialsId: 'SERVER_SSH_KEY',
+                       keyFileVariable: 'SSH_KEY',
+                       usernameVariable: 'SSH_USER'
+                    )
+                ]){
+                    sh '''
+                        mkdir -p ~/.ssh
+                        cp "$SSH_KEY" ~/.ssh/id_ed25519
+                        chmod 600 ~/.ssh/id_ed25519
+                       '''
+                }
             }
         }
         
-        // 10. 최신 이미지 읽어오기
-        stage("DOCKER Compose Pull") {
+        // 11. aws 접근
+        stage("Known Hosts"){
             steps {
                 sh '''
-                    docker compose pull 
+                    mkdir -p ~/.ssh
+                    ssh-keyscan -H 43.200.129.248 >> ~/.ssh/Known_hosts
+                    
+                    chmod 644 ~/.ssh/Known_hosts
                    '''
             }
         }
-        
-        // 11. docker compose 실행
-        stage("DOCKER Compose Up") {
+        // 12. .env 생성
+        stage('Create .env'){
             steps {
-                sh '''
-                    docker compose up -d 
-                   '''
+                withCredentials([
+                    string(
+                        credentialsId: 'post-url',
+                        variable: 'POST_URL'
+                    ),
+                    string(
+                        credentialsId: 'gen-key',
+                        variable: 'GEN_KEY'
+                    ),
+                    sshUserPrivateKey(
+                       credentialsId: 'SERVER_SSH_KEY',
+                       keyFileVariable: 'SSH_KEY',
+                       usernameVariable: 'SSH_USER'
+                    )
+                ]){
+                    sh '''
+                       ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248<<EOF
+                       mkdir -p /home/ubuntu/app
+                       
+                       cd /home/ubuntu/app
+                       
+                       rm -f .env 
+                       echo "SPRING_PROFILES_ACTIVE=prod" > .env
+                       echo "POST_URL=${POST_URL}" >> .env
+                       echo "GEN_KEY=${GEN_KEY}" >> .env
+                        
+                       chmod 600 .env
+                       
+                       EOF
+                       '''
+                }
             }
         }
-        
-        // 12. 컨테이너 체크 
-        stage("Container Check") {
+        // 13. docker-compose.yml 이동
+        stage("Copy Docker-Compose"){
             steps {
-                sh '''
-                    docker compose ps 
-                   '''
+                 withCredentials([
+                    sshUserPrivateKey(
+                       credentialsId: 'SERVER_SSH_KEY',
+                       keyFileVariable: 'SSH_KEY',
+                       usernameVariable: 'SSH_USER'
+                    )
+                ]){
+                    sh '''
+                       ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248 "mkdir -p /home/ubuntu/app"
+                       
+                       scp -i "SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248 docker-compose.yml ubuntu@43.200.129.248:/home/ubuntu/app/docker-compose.yml
+                       '''
+                }
             }
         }
-    } // stages 종료
-
-    post {
-        success{
-            echo '==============================================='
-            echo 'Docker Compose 배포 성공'
-            echo '==============================================='
-        }
-        failure {
-            echo '==============================================='
-            echo 'Docker Compose 배포 실패'
-            echo '==============================================='
-            sh '''
-                docker compose ps || true
-               '''
+        stage("Deploy"){
+            steps {
+                 withCredentials([
+                    sshUserPrivateKey(
+                       credentialsId: 'SERVER_SSH_KEY',
+                       keyFileVariable: 'SSH_KEY',
+                       usernameVariable: 'SSH_USER'
+                    )
+                ]){
+                    sh '''
+                        ssh -i "$SSH_KEY" -o StrickHostKeyChecking=no ubuntu@43.200.129.248<<EOF
+                        cd /home/ubuntu/app
+                        docker-compose down
+                        docker-compose pull
+                        docker-compose up -d
+                        
+                        EOF
+                        
+                       '''
+                }
+            }
         }
     }
 } // pipeline 종료
